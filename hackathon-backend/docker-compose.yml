@@ -1,0 +1,56 @@
+version: '3.8'
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: hackathon_db
+    environment:
+      MYSQL_ROOT_PASSWORD: Hemanth1102@
+      MYSQL_DATABASE: hackathon_system
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: hackathon_mq
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  backend:
+    build: ./backend
+    container_name: hackathon_backend
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_HOST=mysql
+      - DB_USER=root
+      - DB_PASS=Hemanth1102@
+      - DB_NAME=hackathon_system
+      - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
+      - JWT_SECRET=supersecret_jwt_key
+      - ENCRYPTION_KEY=0123456789abcdef0123456789abcdef
+      - GOOGLE_CLIENT_ID=your-google-client-id
+    depends_on:
+      - mysql
+      - rabbitmq
+
+  worker:
+    build: ./worker
+    container_name: hackathon_worker
+    environment:
+      - DB_HOST=mysql
+      - DB_USER=root
+      - DB_PASS=Hemanth1102@
+      - DB_NAME=hackathon_system
+      - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
+    depends_on:
+      - mysql
+      - rabbitmq
+
+volumes:
+  mysql_data:
